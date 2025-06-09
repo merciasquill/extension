@@ -8,16 +8,29 @@ export default defineContentScript({
 });
 
 browser.runtime.onMessage.addListener(
-  async ({ type, header, content, action }, _sender, sendResponse) => {
+  ({ action }, _sender, sendResponse) => {}
+);
 
-    if (!type.endsWith("_toast")) return;
+browser.runtime.onMessage.addListener(
+  ({ action, ...options }, _sender, sendResponse) => {
+    if (action === "user_agent_prompt") {
+      const userAgent = navigator.userAgent;
+      return sendResponse({ action: "user_agent_response", userAgent });
+    }
+
+    if (action !== "show_toast") return;
+
+    const type = options.type;
+    const header = options.header;
+    const content = options.content;
+    const toastAction = options.toastAction;
 
     const toastContainer = ToastContainer({ type });
-    const closeButton = CloseButton({ type });
+    const closeButton = CloseButton({ type }, sendResponse);
 
     const alertIcon = AlertIcon({ type });
     const toastText = ToastText({ type, header, content });
-    const actionButton = ActionButton({ type, action });
+    const actionButton = ActionButton({ type, toastAction });
 
     const iconTextContainer = document.createElement("div");
     iconTextContainer.id = "mercias-quill-icon-text-container";
@@ -30,16 +43,10 @@ browser.runtime.onMessage.addListener(
 
     document.body.appendChild(toastContainer);
 
-    setTimeout(() => {
-      toastContainer.classList.add("show");
-    }, 250);
+    setTimeout(() => toastContainer.classList.add("show"), 250);
+    setTimeout(() => closeButtonEventHandler(sendResponse), 30_000);
 
-    setTimeout(() => {
-      toastContainer.classList.remove("show");
-      toastContainer.classList.add("hide");
-    }, 20_000);
-
-    sendResponse({ response: "Toast created" });
+    return true;
   }
 );
 
@@ -52,11 +59,11 @@ function ToastContainer({ type = "default_toast" }) {
   return container;
 }
 
-function CloseButton({ type = "default_toast" }) {
+function CloseButton({ type = "default_toast" }, sendResponse: Function) {
   const button = document.createElement("button");
   button.id = "mercias-quill-toast-close-button";
 
-  button.addEventListener("click", closeButtonEventHandler);
+  button.addEventListener("click", () => closeButtonEventHandler(sendResponse));
 
   const svgNS = "http://www.w3.org/2000/svg";
 
@@ -144,13 +151,13 @@ function ToastText({ type = "default_toast", header = "", content = "" }) {
   return textContainer;
 }
 
-function ActionButton({ type = "default_toast", action = {} }) {
+function ActionButton({ type = "default_toast", toastAction = {} }) {
   const button = document.createElement("button");
   button.id = "mercias-quill-toast-action-button";
   button.textContent = "Sign In";
 
   button.addEventListener("click", (event) => {
-    actionEventHandler(action);
+    actionEventHandler(toastAction);
   });
 
   if (type === "default_toast") {
@@ -164,7 +171,7 @@ function ActionButton({ type = "default_toast", action = {} }) {
   return button;
 }
 
-function closeButtonEventHandler() {
+function closeButtonEventHandler(sendResponse: Function) {
   const toastContainer = document.getElementById(
     "mercias-quill-toast-container"
   );
@@ -172,6 +179,8 @@ function closeButtonEventHandler() {
 
   toastContainer.classList.remove("show");
   toastContainer.classList.add("hide");
+
+  sendResponse({ action: "toast_hidden" });
 }
 
 function actionEventHandler(action: { href?: string }) {

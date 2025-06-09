@@ -2,22 +2,26 @@ import { type Browser } from "@wxt-dev/browser";
 
 import { storage } from "#imports";
 
-export default defineBackground(async () => {
+export default defineBackground(() => {
   console.log("Mercia's Quill background fetch script active");
 
-  const enabled = await storage.getItem("local:enabled");
-  const location = await storage.getItem("local:storage-location");
-  const interval = await storage.getItem("local:fetch-interval");
+  async function loadExtensionSettings() {
+    const enabled = await storage.getItem("local:enabled");
+    const location = await storage.getItem("local:storage-location");
+    const interval = await storage.getItem("local:fetch-interval");
 
-  if (enabled === null) {
-    await storage.setItem("local:enabled", true);
+    if (enabled === null) {
+      await storage.setItem("local:enabled", true);
+    }
+    if (location === null) {
+      await storage.setItem("local:storage-location", "server");
+    }
+    if (interval === null) {
+      await storage.setItem("local:fetch-interval", 12);
+    }
   }
-  if (location === null) {
-    await storage.setItem("local:storage-location", "server");
-  }
-  if (interval === null) {
-    await storage.setItem("local:fetch-interval", 12);
-  }
+
+  loadExtensionSettings();
 });
 
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -31,8 +35,6 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     return;
   }
 
-  console.log(tab.url);
-
   if (rootDomain === "seaofthieves.com") {
     return refreshSeaOfThievesCredentials(tabId, changeInfo, tab);
   }
@@ -44,7 +46,6 @@ async function refreshSeaOfThievesCredentials(
   tab: Browser.tabs.Tab
 ) {
   const extensionEnabled = await storage.getItem("local:enabled");
-  console.log(extensionEnabled);
 
   // can be null on the initial installation
   // default to disabled since may be signed out
@@ -67,16 +68,21 @@ async function refreshSeaOfThievesCredentials(
 
     if (notifiedCookie) return console.log("Missing session notified");
 
-    await browser.tabs.sendMessage(tabId, {
-      type: "error_toast",
-      header: "Unknown Session",
-      content: "Failed to sign in to Mercia's Quill",
-      action: {
-        href: "https://www.merciasquill.com/auth/extension/discord-sign-in",
-      },
-    });
+    const response = await browser.tabs
+      .sendMessage(tabId, {
+        action: "show_toast",
+        type: "error_toast",
+        header: "Unknown Session",
+        content: "Failed to sign in to Mercia's Quill",
+        toastAction: {
+          href: "https://www.merciasquill.com/auth/extension/discord-sign-in",
+        },
+      })
+      .catch(() => null);
 
-    return await browser.cookies.set({
+    if (!response) return;
+
+    return browser.cookies.set({
       url: "https://www.merciasquill.com",
       domain: ".merciasquill.com",
       name: "extension:unknown-session-notified",
@@ -89,6 +95,19 @@ async function refreshSeaOfThievesCredentials(
   if (typeof activeSession !== "string") throw Error("Invalid session");
   // -------------------------------------------------------------------------------
 
+  // ------------------------------- User Agent Check -------------------------------
+  let userAgent: string | null = await storage.getItem("local:user-agent");
+
+  if (!userAgent) {
+    const response = await browser.tabs.sendMessage(tabId, {
+      action: "user_agent_prompt",
+    });
+
+    userAgent = response.userAgent as string;
+    await storage.setItem("local:user-agent", response.userAgent);
+  }
+  // -------------------------------------------------------------------------------
+
   const ratCookie = await browser.cookies.get({
     url: "https://www.seaofthieves.com",
     name: "rat",
@@ -96,40 +115,52 @@ async function refreshSeaOfThievesCredentials(
 
   if (!ratCookie) return console.log("Missing rat token");
 
+  const ratCookieValue = ratCookie.value;
+  const ratCookieExpiration = ratCookie.expirationDate ?? 0;
+
   const storageLocation = await storage.getItem("local:storage-location");
 
   if (storageLocation === "client") {
-    return await browser.cookies.set({
+    await browser.cookies.set({
       url: "https://www.merciasquill.com",
       domain: ".merciasquill.com",
       name: "seaofthieves:rat",
       value: ratCookie.value,
+      expirationDate: ratCookieExpiration,
 
       secure: true,
       httpOnly: true,
       sameSite: "strict",
     });
+
+    return console.log("Saved rat token to client");
   }
 
   const apiUrl = new URL(
     "https://api.merciasquill.com/auth/seaofthieves/tokens"
   );
 
-  const body = new URLSearchParams({ rat: ratCookie.value });
-  const headers = new Headers({ Authorization: activeSession });
+  const headers = new Headers();
+  headers.append("x-jwt-token", activeSession);
 
-  const response = await fetch(apiUrl, { method: "POST", body, headers });
+  const body = new URLSearchParams();
+  body.append("rat", ratCookie.value);
+  body.append("expiresAt", Math.round(ratCookieExpiration * 1000) + "");
+  body.append("userAgent", userAgent);
+
+  const response = await fetch(apiUrl, { method: "PUT", headers, body });
 
   // Invalid session cookie
   if (response.status === 401) {
-    await storage.removeItem("local:session");
+    // await storage.removeItem("local:session");
     return await browser.cookies.remove({
       url: "https://www.merciasquill.com",
       name: "extension:session",
     });
   }
 
-  if (!response.ok) return;
+  if (!response.ok) return console.log("Failed to save rat token");
 
   await storage.setItem("local:last-update", Date.now());
+  console.log("Saved rat token to server");
 }
