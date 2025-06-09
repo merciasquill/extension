@@ -111,7 +111,7 @@ export default ({ className = "" }) => {
 
       <div
         className={cn(
-          "mb-5 flex h-16 w-60 items-center justify-between rounded-2xl bg-zinc-900 px-4",
+          "mb-5 flex h-14 w-60 items-center justify-between rounded-2xl bg-zinc-900 px-4",
           className
         )}
       >
@@ -124,7 +124,7 @@ export default ({ className = "" }) => {
           </Avatar>
 
           <div className="flex flex-col">
-            <p className="text-sm font-medium text-zinc-500"> {displayName} </p>
+            <p className="text-xs font-medium text-zinc-500"> {displayName} </p>
             <p className="text-xs font-light text-zinc-600">{username}</p>
           </div>
         </div>
