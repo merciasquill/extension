@@ -33,7 +33,7 @@ export default [
       "no-console": "warn",
       "prefer-const": "error",
       "no-unused-vars": "error",
-      'eqeqeq': 'error',
+      eqeqeq: "error",
     },
   },
 ];

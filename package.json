@@ -1,5 +1,5 @@
 {
-  "name": "Mercia's Quill",
+  "name": "mercias-quill-extension",
   "description": "manifest.json description",
   "private": true,
   "version": "0.0.0",
@@ -12,7 +12,8 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "prettier": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,html,css,json}\""
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.5",

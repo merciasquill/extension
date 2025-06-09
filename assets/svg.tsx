@@ -1,8 +1,5 @@
 import { cn } from "@/lib/utils";
 
-
-
-
 export function InfoIcon({ className = "", size = 25, ...props }) {
   return (
     <svg
