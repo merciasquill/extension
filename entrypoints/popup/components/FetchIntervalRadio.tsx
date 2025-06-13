@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-
 import { storage } from "#imports";
-import { cn } from "@/lib/utils.ts";
 
 import { InfoIcon } from "@/assets/svg.tsx";
+import { cn } from "@/lib/utils.ts";
 
 export default ({ clientSide = false }) => {
   const [fetchInterval, setFetchInterval] = useState<number | null>(null);

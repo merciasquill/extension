@@ -1,10 +1,4 @@
-import { InfoIcon, LogOutIcon, PowerIcon } from "@/assets/svg";
-
-import CredentialStorageRadio from "./components/CredentialStorageRadio.js";
-import FetchIntervalRadio from "./components/FetchIntervalRadio.js";
-import PowerButton from "./components/PowerButton.js";
 import ProfileBar from "./components/ProfileBar.js";
-import { cn } from "@/lib/utils.ts";
 
 export default function App() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);

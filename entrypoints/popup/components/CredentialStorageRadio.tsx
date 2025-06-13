@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-
 import { storage } from "#imports";
 
-import { Button } from "@/components/ui/button.tsx";
-import { InfoIcon } from "@/assets/svg.tsx";
-import { cn } from "@/lib/utils.ts";
-
 import FetchIntervalRadio from "./FetchIntervalRadio.js";
+
+import { InfoIcon } from "@/assets/svg.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { cn } from "@/lib/utils.ts";
 
 export default function ({ status = false, signedIn = false }) {
   const [clientSide, setClientSide] = useState<boolean | null>(null);

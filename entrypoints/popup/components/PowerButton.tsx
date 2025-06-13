@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-
 import { storage } from "#imports";
-import { cn } from "@/lib/utils.ts";
+
+import CredentialStorageRadio from "./CredentialStorageRadio.js";
 
 import { PowerIcon } from "@/assets/svg.tsx";
-import CredentialStorageRadio from "./CredentialStorageRadio.js";
+import { cn } from "@/lib/utils.ts";
 
 export default function ({ signedIn = false }) {
   const [status, setStatus] = useState<boolean | null>(null);

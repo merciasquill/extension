@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 
 import { browser } from "#imports";
-import { cn } from "@/lib/utils.ts";
+
+import PowerButton from "./PowerButton.js";
 
 import { LogInIcon, LogOutIcon } from "@/assets/svg.tsx";
 import { Button } from "@/components/ui/button.tsx";
@@ -10,7 +11,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar.tsx";
-import PowerButton from "./PowerButton.js";
+import { cn } from "@/lib/utils.ts";
 
 export default ({ className = "" }) => {
   const [displayName, setDisplayName] = useState<string | null>(null);
