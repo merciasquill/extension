@@ -25,7 +25,7 @@ export default ({ clientSide = false }) => {
   return (
     <div
       className={cn(
-        "flex flex-col items-center items-start overflow-hidden transition-all duration-700",
+        "flex flex-col items-start overflow-hidden transition-all duration-700",
         !clientSide && "max-h-96 ease-in",
         clientSide && "max-h-0 ease-out"
       )}

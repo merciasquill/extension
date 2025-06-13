@@ -1,8 +1,8 @@
 {
-  "name": "mercias-quill-extension",
-  "description": "manifest.json description",
+  "name": "Mercia's Quill",
+  "description": "Mercia's Quill is a versatile utility app for Sea of Thieves! This extension fetches your access cookies for verification.",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
