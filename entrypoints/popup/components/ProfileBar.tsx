@@ -24,17 +24,7 @@ export default ({ className = "" }) => {
     async function fetchSession() {
       let userSession: string | null = await storage.getItem("local:session");
 
-      if (!userSession) {
-        const cookieSession = await browser.cookies.get({
-          url: "https://www.merciasquill.com",
-          name: "extension:session",
-        });
-
-        if (!cookieSession) return setSignedIn(false);
-
-        userSession = cookieSession.value;
-        await storage.setItem("local:session", userSession);
-      }
+      if (!userSession) return;
 
       const [, base64UrlSession] = userSession.split(".");
       const base64Session = base64UrlSession
@@ -45,12 +35,12 @@ export default ({ className = "" }) => {
         atob(base64Session)
       );
 
-      if (sessionData.displayName.length > 12)
-        setDisplayName(sessionData.displayName.substring(0, 12) + "...");
-      else setDisplayName(sessionData.displayName);
+      if (sessionData.globalName.length > 12)
+        setDisplayName(sessionData.globalName.substring(0, 12) + "...");
+      else setDisplayName(sessionData.globalName);
 
       setUsername(sessionData.username);
-      setProfilePicture(sessionData.pfp);
+      setProfilePicture(sessionData.avatarImage);
 
       setSignedIn(true);
     }
@@ -66,11 +56,6 @@ export default ({ className = "" }) => {
   }
 
   async function logout() {
-    await browser.cookies.remove({
-      url: "https://www.merciasquill.com",
-      name: "extension:session",
-    });
-
     await storage.removeItem("local:session");
     await storage.setItem("local:enabled", false);
 

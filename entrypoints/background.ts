@@ -38,6 +38,10 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (rootDomain === "seaofthieves.com") {
     return refreshSeaOfThievesCredentials(tabId, changeInfo, tab);
   }
+
+  if (rootDomain === "merciasquill.com") {
+    return loadSession();
+  }
 });
 
 async function refreshSeaOfThievesCredentials(
@@ -155,7 +159,7 @@ async function refreshSeaOfThievesCredentials(
     // await storage.removeItem("local:session");
     return await browser.cookies.remove({
       url: "https://www.merciasquill.com",
-      name: "extension:session",
+      name: "session:jwt_token",
     });
   }
 
@@ -163,4 +167,18 @@ async function refreshSeaOfThievesCredentials(
 
   await storage.setItem("local:last-update", Date.now());
   console.log("Saved rat token to server");
+}
+
+async function loadSession() {
+  const session = await storage.getItem("local:session");
+  if (session) return;
+
+  const cookieSession = await browser.cookies.get({
+    url: "https://www.merciasquill.com",
+    name: "session:jwt_token",
+  });
+
+  if (!cookieSession) return;
+
+  await storage.setItem("local:session", cookieSession.value);
 }
