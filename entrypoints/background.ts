@@ -65,6 +65,7 @@ async function refreshSeaOfThievesCredentials(
   const activeSession = await storage.getItem("local:session");
 
   if (!activeSession) {
+    loadSession();
     const notifiedCookie = await browser.cookies.get({
       url: "https://www.merciasquill.com",
       name: "extension:unknown-session-notified",
