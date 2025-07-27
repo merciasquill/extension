@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { storage } from "#imports";
 
 import FetchIntervalRadio from "./FetchIntervalRadio.js";
 
+import { storage } from "#imports";
 import { InfoIcon } from "@/assets/svg.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { cn } from "@/lib/utils.ts";
 
-export default function ({ status = false, signedIn = false }) {
+export default function CredentialStorageRadio({
+  status = false,
+  signedIn = false,
+}) {
   const [clientSide, setClientSide] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -44,29 +47,30 @@ export default function ({ status = false, signedIn = false }) {
 
           <a
             href="https://docs.merciasquill.com/sea-of-thieves-api/extension#credential-storage-options"
+            rel="noreferrer"
             target="_blank"
           >
-            <InfoIcon size={12} className="stroke-zinc-500" />
+            <InfoIcon className="stroke-zinc-500" size={12} />
           </a>
         </div>
 
         <div className="flex w-full flex-row justify-center space-x-3 px-1">
           <Button
-            onClick={() => setClientSide(false)}
             className={cn(
               "flex-1 overflow-visible border-2 border-yellow-500/10 bg-yellow-500/10 p-3 text-xs font-normal text-yellow-500/60 transition-all hover:scale-102 hover:bg-yellow-500/15 hover:text-yellow-500/70 active:scale-100",
               clientSide && "bg-transparent"
             )}
+            onClick={() => setClientSide(false)}
           >
             Server-Side
           </Button>
 
           <Button
-            onClick={() => setClientSide(true)}
             className={cn(
               "flex-1 overflow-visible border-2 border-zinc-300/10 bg-zinc-300/10 p-3 text-xs font-normal text-zinc-400/60 transition-all hover:scale-105 hover:bg-zinc-300/15 hover:text-zinc-400/70 active:scale-100",
               !clientSide && "bg-transparent"
             )}
+            onClick={() => setClientSide(true)}
           >
             Client-Side
           </Button>

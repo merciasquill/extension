@@ -1,19 +1,17 @@
 import { useState, useEffect } from "react";
 
-import { browser } from "#imports";
-
 import PowerButton from "./PowerButton.js";
 
 import { LogInIcon, LogOutIcon } from "@/assets/svg.tsx";
-import { Button } from "@/components/ui/button.tsx";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar.tsx";
+import { Button } from "@/components/ui/button.tsx";
 import { cn } from "@/lib/utils.ts";
 
-export default ({ className = "" }) => {
+export default function ProfileBar({ className = "" }) {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
@@ -78,7 +76,7 @@ export default ({ className = "" }) => {
         >
           <span className="flex flex-row items-center space-x-2 transition-all group-hover/login:scale-102 group-active/login:scale-100">
             <p className="text-xs font-medium text-zinc-500">
-              Sign into Mercia's Quill
+              Sign into Mercia&apos;s Quill
             </p>
             <LogInIcon className="stroke-zinc-500 transition-all group-hover/login:stroke-green-500/70 group-active/login:scale-100" />
           </span>
@@ -116,14 +114,14 @@ export default ({ className = "" }) => {
         </div>
 
         <Button
-          variant="ghost"
-          size="icon"
-          onClick={logout}
           className="group/logout hover:bg-zinc-900"
+          size="icon"
+          variant="ghost"
+          onClick={logout}
         >
           <LogOutIcon className="stroke-zinc-500 transition-all group-hover/logout:scale-110 group-hover/logout:stroke-red-500/70 group-active/logout:scale-100" />
         </Button>
       </div>
     </>
   );
-};
+}

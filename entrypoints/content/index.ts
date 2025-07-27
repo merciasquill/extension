@@ -8,10 +8,6 @@ export default defineContentScript({
 });
 
 browser.runtime.onMessage.addListener(
-  ({ action }, _sender, sendResponse) => {}
-);
-
-browser.runtime.onMessage.addListener(
   ({ action, ...options }, _sender, sendResponse) => {
     if (action === "user_agent_prompt") {
       const userAgent = navigator.userAgent;
@@ -156,7 +152,7 @@ function ActionButton({ type = "default_toast", toastAction = {} }) {
   button.id = "mercias-quill-toast-action-button";
   button.textContent = "Sign In";
 
-  button.addEventListener("click", (event) => {
+  button.addEventListener("click", () => {
     actionEventHandler(toastAction);
   });
 

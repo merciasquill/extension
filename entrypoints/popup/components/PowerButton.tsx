@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { storage } from "#imports";
 
 import CredentialStorageRadio from "./CredentialStorageRadio.js";
 
+import { storage } from "#imports";
 import { PowerIcon } from "@/assets/svg.tsx";
 import { cn } from "@/lib/utils.ts";
 
-export default function ({ signedIn = false }) {
+export default function PowerButton({ signedIn = false }) {
   const [status, setStatus] = useState<boolean | null>(null);
   const [rotation, setRotation] = useState<number | null>(null);
 
@@ -37,21 +37,21 @@ export default function ({ signedIn = false }) {
   return (
     <>
       <button
-        onClick={toggle}
         className="group mb-5 flex w-full justify-center"
+        onClick={toggle}
       >
         <PowerIcon
-          size={150}
-          style={{ transform: `rotate(${rotation}deg)` }}
           className={cn(
             `transition-all group-hover:scale-110 group-active:scale-100`,
             status && "stroke-zinc-500",
             !status && "stroke-zinc-800"
           )}
+          size={150}
+          style={{ transform: `rotate(${rotation}deg)` }}
         />
       </button>
 
-      <CredentialStorageRadio status={status} signedIn={signedIn} />
+      <CredentialStorageRadio signedIn={signedIn} status={status} />
     </>
   );
 }

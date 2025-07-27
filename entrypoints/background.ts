@@ -3,7 +3,8 @@ import { type Browser } from "@wxt-dev/browser";
 import { storage } from "#imports";
 
 export default defineBackground(() => {
-  console.log("Mercia's Quill background fetch script active");
+  // eslint-disable-next-line no-console
+  console.log("Mercia's Quill background script active");
 
   async function loadExtensionSettings() {
     const enabled = await storage.getItem("local:enabled");
@@ -46,8 +47,8 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 async function refreshSeaOfThievesCredentials(
   tabId: number,
-  changeInfo: Browser.tabs.TabChangeInfo,
-  tab: Browser.tabs.Tab
+  _changeInfo: Browser.tabs.TabChangeInfo,
+  _tab: Browser.tabs.Tab
 ) {
   const extensionEnabled = await storage.getItem("local:enabled");
 
@@ -58,7 +59,8 @@ async function refreshSeaOfThievesCredentials(
   const lastUpdate = await storage.getItem("local:last-update");
   const lastUpdateValid = lastUpdate && typeof lastUpdate === "number";
   if (lastUpdateValid && lastUpdate > Date.now() - 60 * 60 * 10 * 1000) {
-    return console.log("Synced within last 10 minutes");
+    // eslint-disable-next-line no-console
+    return console.log("rat token synced within last 10 minutes");
   }
 
   // -------------------------------- Session Check --------------------------------
@@ -71,7 +73,8 @@ async function refreshSeaOfThievesCredentials(
       name: "extension:unknown-session-notified",
     });
 
-    if (notifiedCookie) return console.log("Missing session notified");
+    // eslint-disable-next-line no-console
+    if (notifiedCookie) return console.log("unknown mq session notified");
 
     const response = await browser.tabs
       .sendMessage(tabId, {
@@ -118,9 +121,9 @@ async function refreshSeaOfThievesCredentials(
     name: "rat",
   });
 
-  if (!ratCookie) return console.log("Missing rat token");
+  // eslint-disable-next-line no-console
+  if (!ratCookie) return console.log("rat token undefined");
 
-  const ratCookieValue = ratCookie.value;
   const ratCookieExpiration = ratCookie.expirationDate ?? 0;
 
   const storageLocation = await storage.getItem("local:storage-location");
@@ -138,7 +141,8 @@ async function refreshSeaOfThievesCredentials(
       sameSite: "strict",
     });
 
-    return console.log("Saved rat token to client");
+    // eslint-disable-next-line no-console
+    return console.log("saved rat token to client");
   }
 
   const apiUrl = new URL(
@@ -164,10 +168,12 @@ async function refreshSeaOfThievesCredentials(
     });
   }
 
-  if (!response.ok) return console.log("Failed to save rat token");
+  // eslint-disable-next-line no-console
+  if (!response.ok) return console.log("failed to save rat token");
 
   await storage.setItem("local:last-update", Date.now());
-  console.log("Saved rat token to server");
+  // eslint-disable-next-line no-console
+  console.log("successfully saved rat token to server");
 }
 
 async function loadSession() {
