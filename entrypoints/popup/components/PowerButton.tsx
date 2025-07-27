@@ -10,8 +10,12 @@ export default function PowerButton({ signedIn = false }) {
   const [status, setStatus] = useState<boolean | null>(null);
   const [rotation, setRotation] = useState<number | null>(null);
 
+  const localStorageKey = "local:enabled";
+
   useEffect(() => {
-    storage.getItem("local:enabled").then((enabled) => {
+    storage.getItem(localStorageKey).then((enabled) => {
+      if (enabled === null) storage.setItem(localStorageKey, true);
+
       if (enabled === false) {
         setStatus(false);
         setRotation(180);
@@ -24,7 +28,8 @@ export default function PowerButton({ signedIn = false }) {
 
   useEffect(() => {
     if (status === null) return;
-    storage.setItem("local:enabled", status);
+
+    storage.setItem(localStorageKey, status);
   }, [status]);
 
   function toggle() {

@@ -5,24 +5,6 @@ import { storage } from "#imports";
 export default defineBackground(() => {
   // eslint-disable-next-line no-console
   console.log("Mercia's Quill background script active");
-
-  async function loadExtensionSettings() {
-    const enabled = await storage.getItem("local:enabled");
-    const location = await storage.getItem("local:storage-location");
-    const interval = await storage.getItem("local:fetch-interval");
-
-    if (enabled === null) {
-      await storage.setItem("local:enabled", true);
-    }
-    if (location === null) {
-      await storage.setItem("local:storage-location", "server");
-    }
-    if (interval === null) {
-      await storage.setItem("local:fetch-interval", 12);
-    }
-  }
-
-  loadExtensionSettings();
 });
 
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -53,7 +35,6 @@ async function refreshSeaOfThievesCredentials(
   const extensionEnabled = await storage.getItem("local:enabled");
 
   // can be null on the initial installation
-  // default to disabled since may be signed out
   if (extensionEnabled === false) return;
 
   const lastUpdate = await storage.getItem("local:last-update");

@@ -13,8 +13,12 @@ export default function CredentialStorageRadio({
 }) {
   const [clientSide, setClientSide] = useState<boolean | null>(null);
 
+  const localStorageKey = "local:storage-location";
+
   useEffect(() => {
-    storage.getItem("local:storage-location").then((storageLocation) => {
+    storage.getItem(localStorageKey).then((storageLocation) => {
+      if (storageLocation === null) storage.setItem(localStorageKey, "server");
+
       if (storageLocation === "client") setClientSide(true);
       else setClientSide(false);
     });
@@ -23,8 +27,8 @@ export default function CredentialStorageRadio({
   useEffect(() => {
     if (clientSide === null) return;
 
-    if (clientSide) storage.setItem("local:storage-location", "client");
-    else storage.setItem("local:storage-location", "server");
+    if (clientSide) storage.setItem(localStorageKey, "client");
+    else storage.setItem(localStorageKey, "server");
   }, [clientSide]);
 
   if (clientSide === null) return null;

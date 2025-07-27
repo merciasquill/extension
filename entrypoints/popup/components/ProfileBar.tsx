@@ -22,7 +22,7 @@ export default function ProfileBar({ className = "" }) {
     async function fetchSession() {
       let userSession: string | null = await storage.getItem("local:session");
 
-      if (!userSession) return;
+      if (!userSession) return setSignedIn(false);
 
       const [, base64UrlSession] = userSession.split(".");
       const base64Session = base64UrlSession

@@ -7,8 +7,12 @@ import { cn } from "@/lib/utils.ts";
 export default function FetchIntervalRadio({ clientSide = false }) {
   const [fetchInterval, setFetchInterval] = useState<number | null>(null);
 
+  const localStorageKey = "local:fetch-interval";
+
   useEffect(() => {
-    storage.getItem("local:fetch-interval").then((interval) => {
+    storage.getItem(localStorageKey).then((interval) => {
+      if (interval === null) storage.setItem(localStorageKey, 12);
+
       if (typeof interval === "number") setFetchInterval(interval);
       else setFetchInterval(12);
     });
@@ -17,7 +21,7 @@ export default function FetchIntervalRadio({ clientSide = false }) {
   useEffect(() => {
     if (fetchInterval === null) return;
 
-    storage.setItem("local:fetch-interval", fetchInterval);
+    storage.setItem(localStorageKey, fetchInterval);
   }, [fetchInterval]);
 
   if (fetchInterval === null) return null;
