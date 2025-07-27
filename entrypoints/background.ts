@@ -1,4 +1,6 @@
-import { type Browser } from "@wxt-dev/browser";
+import type { Browser } from "@wxt-dev/browser";
+
+import { decodeJwt } from "jose";
 
 import { storage } from "#imports";
 
@@ -21,10 +23,6 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (rootDomain === "seaofthieves.com") {
     return refreshSeaOfThievesCredentials(tabId, changeInfo, tab);
   }
-
-  if (rootDomain === "merciasquill.com") {
-    return loadSession();
-  }
 });
 
 async function refreshSeaOfThievesCredentials(
@@ -45,13 +43,24 @@ async function refreshSeaOfThievesCredentials(
   }
 
   // -------------------------------- Session Check --------------------------------
-  const activeSession = await storage.getItem("local:session");
+  let activeSession = await storage.getItem("local:session");
 
-  if (!activeSession) {
-    loadSession();
-    const notifiedCookie = await browser.cookies.get({
+  attemptSessionRecovery: if (!activeSession) {
+    const cookieSession = await browser.cookies.get({
       url: "https://www.merciasquill.com",
-      name: "extension:unknown-session-notified",
+      name: "session:long_jwt_token",
+    });
+
+    if (cookieSession) {
+      activeSession = cookieSession.value;
+      await storage.setItem("local:session", activeSession);
+
+      break attemptSessionRecovery;
+    }
+
+    const notifiedCookie = await browser.cookies.get({
+      url: "https://extension.merciasquill.com",
+      name: "unknown-session-notified",
     });
 
     // eslint-disable-next-line no-console
@@ -72,9 +81,9 @@ async function refreshSeaOfThievesCredentials(
     if (!response) return;
 
     return browser.cookies.set({
-      url: "https://www.merciasquill.com",
-      domain: ".merciasquill.com",
-      name: "extension:unknown-session-notified",
+      url: "https://extension.merciasquill.com",
+      domain: "extension.merciasquill.com",
+      name: "unknown-session-notified",
       value: "true",
 
       expirationDate: Date.now() / 1000 + 600, // 10 minutes
@@ -126,8 +135,10 @@ async function refreshSeaOfThievesCredentials(
     return console.log("saved rat token to client");
   }
 
+  const decodedJwt = decodeJwt(activeSession);
+
   const apiUrl = new URL(
-    "https://api.merciasquill.com/auth/seaofthieves/tokens"
+    `https://api.merciasquill.com/seaofthieves/tokens/${decodedJwt.sub}`
   );
 
   const headers = new Headers();
@@ -155,18 +166,4 @@ async function refreshSeaOfThievesCredentials(
   await storage.setItem("local:last-update", Date.now());
   // eslint-disable-next-line no-console
   console.log("successfully saved rat token to server");
-}
-
-async function loadSession() {
-  const session = await storage.getItem("local:session");
-  if (session) return;
-
-  const cookieSession = await browser.cookies.get({
-    url: "https://www.merciasquill.com",
-    name: "session:jwt_token",
-  });
-
-  if (!cookieSession) return;
-
-  await storage.setItem("local:session", cookieSession.value);
 }
