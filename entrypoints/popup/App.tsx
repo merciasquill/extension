@@ -5,10 +5,8 @@ export default function App() {
 
   useEffect(() => {
     storage.getItem("local:last-update").then((lastStorageUpdate) => {
-      lastStorageUpdate = 1742045565000;
-
       if (typeof lastStorageUpdate !== "number") {
-        lastStorageUpdate = 0;
+        return setLastUpdated("Never");
       }
 
       setLastUpdated(timeAgo(lastStorageUpdate as number));

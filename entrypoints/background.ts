@@ -48,7 +48,7 @@ async function refreshSeaOfThievesCredentials(
   attemptSessionRecovery: if (!activeSession) {
     const cookieSession = await browser.cookies.get({
       url: "https://www.merciasquill.com",
-      name: "session:long_jwt_token",
+      name: "session-long_jwt_token",
     });
 
     if (cookieSession) {
@@ -86,7 +86,7 @@ async function refreshSeaOfThievesCredentials(
       name: "unknown-session-notified",
       value: "true",
 
-      expirationDate: Date.now() / 1000 + 600, // 10 minutes
+      expirationDate: Date.now() / 1000 + 60 * 10, // 10 minutes
     });
   }
 
@@ -94,7 +94,12 @@ async function refreshSeaOfThievesCredentials(
   // -------------------------------------------------------------------------------
 
   // ------------------------------- User Agent Check -------------------------------
-  let userAgent: string | null = await storage.getItem("local:user-agent");
+  const userAgentCookie = await browser.cookies.get({
+    url: "https://extension.merciasquill.com",
+    name: "local-user-agent",
+  });
+
+  let userAgent = userAgentCookie?.value;
 
   if (!userAgent) {
     const response = await browser.tabs.sendMessage(tabId, {
@@ -103,6 +108,15 @@ async function refreshSeaOfThievesCredentials(
 
     userAgent = response.userAgent as string;
     await storage.setItem("local:user-agent", response.userAgent);
+
+    await browser.cookies.set({
+      url: "https://extension.merciasquill.com",
+      domain: "extension.merciasquill.com",
+      name: "local-user-agent",
+      value: encodeURIComponent(response.userAgent),
+
+      expirationDate: Date.now() / 1000 + 60 * 60 * 24 * 7, // 1 week
+    });
   }
   // -------------------------------------------------------------------------------
 
@@ -122,7 +136,7 @@ async function refreshSeaOfThievesCredentials(
     await browser.cookies.set({
       url: "https://www.merciasquill.com",
       domain: ".merciasquill.com",
-      name: "seaofthieves:rat",
+      name: "session-seaofthieves_rat_token",
       value: ratCookie.value,
       expirationDate: ratCookieExpiration,
 
@@ -153,10 +167,10 @@ async function refreshSeaOfThievesCredentials(
 
   // Invalid session cookie
   if (response.status === 401) {
-    // await storage.removeItem("local:session");
+    await storage.removeItem("local:session");
     return await browser.cookies.remove({
       url: "https://www.merciasquill.com",
-      name: "session:jwt_token",
+      name: "session-jwt_token",
     });
   }
 
