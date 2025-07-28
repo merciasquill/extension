@@ -37,7 +37,7 @@ async function refreshSeaOfThievesCredentials(
 
   const lastUpdate = await storage.getItem("local:last-update");
   const lastUpdateValid = lastUpdate && typeof lastUpdate === "number";
-  if (lastUpdateValid && lastUpdate > Date.now() - 60 * 60 * 10 * 1000) {
+  if (lastUpdateValid && lastUpdate > Date.now() - 60 * 10 * 1000) {
     // eslint-disable-next-line no-console
     return console.log("rat token synced within last 10 minutes");
   }
