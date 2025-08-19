@@ -60,7 +60,7 @@ async function refreshSeaOfThievesCredentials(
 
     const notifiedCookie = await browser.cookies.get({
       url: "https://extension.merciasquill.com",
-      name: "unknown-session-notified",
+      name: "unknown_session_notified",
     });
 
     // eslint-disable-next-line no-console
@@ -83,7 +83,7 @@ async function refreshSeaOfThievesCredentials(
     return browser.cookies.set({
       url: "https://extension.merciasquill.com",
       domain: "extension.merciasquill.com",
-      name: "unknown-session-notified",
+      name: "unknown_session_notified",
       value: "true",
 
       expirationDate: Date.now() / 1000 + 60 * 10, // 10 minutes
@@ -96,7 +96,7 @@ async function refreshSeaOfThievesCredentials(
   // ------------------------------- User Agent Check -------------------------------
   const userAgentCookie = await browser.cookies.get({
     url: "https://extension.merciasquill.com",
-    name: "local-user-agent",
+    name: "local_user_agent",
   });
 
   let userAgent = userAgentCookie?.value;
@@ -112,7 +112,7 @@ async function refreshSeaOfThievesCredentials(
     await browser.cookies.set({
       url: "https://extension.merciasquill.com",
       domain: "extension.merciasquill.com",
-      name: "local-user-agent",
+      name: "local_user_agent",
       value: encodeURIComponent(response.userAgent),
 
       expirationDate: Date.now() / 1000 + 60 * 60 * 24 * 7, // 1 week
@@ -180,4 +180,20 @@ async function refreshSeaOfThievesCredentials(
   await storage.setItem("local:last-update", Date.now());
   // eslint-disable-next-line no-console
   console.log("successfully saved rat token to server");
+}
+
+type AttemptSessionRecoveryReturn =
+  | { success: false }
+  | { success: true; session: string };
+
+export async function attemptSessionRecovery(): Promise<AttemptSessionRecoveryReturn> {
+  const cookieSession = await browser.cookies.get({
+    url: "https://extension.merciasquill.com",
+    name: "session-long_jwt_token",
+  });
+
+  if (!cookieSession) return { success: false };
+
+  await storage.setItem("local:session", cookieSession.value);
+  return { success: true, session: cookieSession.value };
 }

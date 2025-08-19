@@ -9,6 +9,7 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar.tsx";
 import { Button } from "@/components/ui/button.tsx";
+import { attemptSessionRecovery } from "@/entrypoints/background.js";
 import { cn } from "@/lib/utils.ts";
 
 export default function ProfileBar({ className = "" }) {
@@ -22,7 +23,12 @@ export default function ProfileBar({ className = "" }) {
     async function fetchSession() {
       let userSession: string | null = await storage.getItem("local:session");
 
-      if (!userSession) return setSignedIn(false);
+      if (!userSession) {
+        const sessionRecovery = await attemptSessionRecovery();
+        if (!sessionRecovery.success) return setSignedIn(false);
+
+        userSession = sessionRecovery.session;
+      }
 
       const [, base64UrlSession] = userSession.split(".");
       const base64Session = base64UrlSession
@@ -56,6 +62,11 @@ export default function ProfileBar({ className = "" }) {
   async function logout() {
     await storage.removeItem("local:session");
     await storage.setItem("local:enabled", false);
+
+    await browser.cookies.remove({
+      url: "https://extension.merciasquill.com",
+      name: "session-long_jwt_token",
+    });
 
     window.close();
   }
