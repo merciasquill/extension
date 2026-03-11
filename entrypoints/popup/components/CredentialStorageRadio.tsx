@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import FetchIntervalRadio from "./FetchIntervalRadio.js";
+import FetchIntervalRadio from "./FetchIntervalRadio.tsx";
 
 import { storage } from "#imports";
 import { InfoIcon } from "@/assets/svg.tsx";

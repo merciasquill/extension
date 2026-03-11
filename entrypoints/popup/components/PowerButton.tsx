@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import CredentialStorageRadio from "./CredentialStorageRadio.js";
+import CredentialStorageRadio from "./CredentialStorageRadio.tsx";
 
 import { storage } from "#imports";
 import { PowerIcon } from "@/assets/svg.tsx";
