@@ -47,36 +47,17 @@ async function refreshSeaOfThievesCredentials(
   const sessionData = await fetchSession();
 
   if (!sessionData.success) {
-    const notifiedCookie = await browser.cookies.get({
-      url: "https://extension.merciasquill.com",
-      name: "unknown_session_notified",
-    });
-
-    // eslint-disable-next-line no-console
-    if (notifiedCookie) return console.log("unknown session already notified");
-
-    const response = await browser.tabs
+    return await browser.tabs
       .sendMessage(tabId, {
         action: "show_toast",
         type: "error_toast",
         header: "Unknown Session",
-        content: "Failed to sign in to Mercia's Quill",
+        content: "Not signed into Mercia's Quill",
         toastAction: {
           href: "https://auth.merciasquill.com/login",
         },
       })
       .catch(() => null);
-
-    if (!response) return;
-
-    return browser.cookies.set({
-      url: "https://extension.merciasquill.com",
-      domain: "extension.merciasquill.com",
-      name: "unknown_session_notified",
-      value: "true",
-
-      expirationDate: Date.now() / 1000 + 60 * 10, // 10 minutes
-    });
   }
   // -------------------------------------------------------------------------------
 
@@ -127,7 +108,7 @@ async function refreshSeaOfThievesCredentials(
   );
 
   const headers = new Headers();
-  headers.append("x-jwt-token", sessionData.jwt);
+  headers.append("x-access-token", sessionData.jwt);
 
   const body = new URLSearchParams();
   body.append("rat", ratCookie.value);

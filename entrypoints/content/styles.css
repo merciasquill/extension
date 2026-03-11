@@ -121,9 +121,6 @@
   transform: translateX(100%);
 }
 
-#mercias-quill-toast-container:hover:not(.hide) {
-  transform: translateY(-10%);
-}
 #mercias-quill-toast-container:hover #mercias-quill-toast-close-button {
   width: 20px;
   height: 20px;
@@ -185,7 +182,7 @@
   margin-right: 10px;
   border-radius: 4px;
 
-  background: oklch(81% 0.117 11.638/65%);
+  background: oklch(81% 0.117 11.638);
   color: oklch(27.1% 0.105 12.094);
 
   display: flex;
