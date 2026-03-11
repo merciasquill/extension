@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import PowerButton from "./PowerButton.js";
+import PowerButton from "./PowerButton.tsx";
 
 import { LogInIcon, LogOutIcon } from "@/assets/svg.tsx";
 import {
@@ -9,7 +9,7 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { attemptSessionRecovery } from "@/entrypoints/background.js";
+import { fetchSession } from "@/entrypoints/background.ts";
 import { cn } from "@/lib/utils.ts";
 
 export default function ProfileBar({ className = "" }) {
@@ -20,55 +20,34 @@ export default function ProfileBar({ className = "" }) {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    async function fetchSession() {
-      let userSession: string | null = await storage.getItem("local:session");
+    async function asynchronous() {
+      const sessionData = await fetchSession();
 
-      if (!userSession) {
-        const sessionRecovery = await attemptSessionRecovery();
-        if (!sessionRecovery.success) return setSignedIn(false);
+      if (!sessionData.success) return setSignedIn(false);
 
-        userSession = sessionRecovery.session;
+      const { session } = sessionData;
+
+      if (session.displayName.length > 12) {
+        setDisplayName(session.displayName.substring(0, 12) + "...");
+      } else {
+        setDisplayName(session.displayName);
       }
 
-      const [, base64UrlSession] = userSession.split(".");
-      const base64Session = base64UrlSession
-        .replace(/-/g, "+")
-        .replace(/_/g, "/");
-
-      const sessionData: Record<string, string> = JSON.parse(
-        atob(base64Session)
-      );
-
-      if (sessionData.globalName.length > 12)
-        setDisplayName(sessionData.globalName.substring(0, 12) + "...");
-      else setDisplayName(sessionData.globalName);
-
-      setUsername(sessionData.username);
-      setProfilePicture(sessionData.avatarImage);
+      setUsername(session.username);
+      setProfilePicture(session.avatar);
 
       setSignedIn(true);
     }
 
-    fetchSession();
+    asynchronous();
   }, []);
 
   async function login() {
-    window.open(
-      "https://www.merciasquill.com/auth/extension/discord-sign-in",
-      "_blank"
-    );
+    window.open("https://auth.merciasquill.com/login", "_blank");
   }
 
   async function logout() {
-    await storage.removeItem("local:session");
-    await storage.setItem("local:enabled", false);
-
-    await browser.cookies.remove({
-      url: "https://extension.merciasquill.com",
-      name: "session-long_jwt_token",
-    });
-
-    window.close();
+    window.open("https://auth.merciasquill.com/logout", "_blank");
   }
 
   if (signedIn === null) return null;

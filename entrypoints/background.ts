@@ -43,28 +43,17 @@ async function refreshSeaOfThievesCredentials(
   }
 
   // -------------------------------- Session Check --------------------------------
-  let activeSession = await storage.getItem("local:session");
 
-  attemptSessionRecovery: if (!activeSession) {
-    const cookieSession = await browser.cookies.get({
-      url: "https://www.merciasquill.com",
-      name: "session-long_jwt_token",
-    });
+  const sessionData = await fetchSession();
 
-    if (cookieSession) {
-      activeSession = cookieSession.value;
-      await storage.setItem("local:session", activeSession);
-
-      break attemptSessionRecovery;
-    }
-
+  if (!sessionData.success) {
     const notifiedCookie = await browser.cookies.get({
       url: "https://extension.merciasquill.com",
       name: "unknown_session_notified",
     });
 
     // eslint-disable-next-line no-console
-    if (notifiedCookie) return console.log("unknown mq session notified");
+    if (notifiedCookie) return console.log("unknown session already notified");
 
     const response = await browser.tabs
       .sendMessage(tabId, {
@@ -73,7 +62,7 @@ async function refreshSeaOfThievesCredentials(
         header: "Unknown Session",
         content: "Failed to sign in to Mercia's Quill",
         toastAction: {
-          href: "https://www.merciasquill.com/auth/extension/discord-sign-in",
+          href: "https://auth.merciasquill.com/login",
         },
       })
       .catch(() => null);
@@ -89,17 +78,10 @@ async function refreshSeaOfThievesCredentials(
       expirationDate: Date.now() / 1000 + 60 * 10, // 10 minutes
     });
   }
-
-  if (typeof activeSession !== "string") throw Error("Invalid session");
   // -------------------------------------------------------------------------------
 
   // ------------------------------- User Agent Check -------------------------------
-  const userAgentCookie = await browser.cookies.get({
-    url: "https://extension.merciasquill.com",
-    name: "local_user_agent",
-  });
-
-  let userAgent = userAgentCookie?.value;
+  let userAgent = await storage.getItem("local:user-agent");
 
   if (!userAgent) {
     const response = await browser.tabs.sendMessage(tabId, {
@@ -108,15 +90,6 @@ async function refreshSeaOfThievesCredentials(
 
     userAgent = response.userAgent as string;
     await storage.setItem("local:user-agent", response.userAgent);
-
-    await browser.cookies.set({
-      url: "https://extension.merciasquill.com",
-      domain: "extension.merciasquill.com",
-      name: "local_user_agent",
-      value: encodeURIComponent(response.userAgent),
-
-      expirationDate: Date.now() / 1000 + 60 * 60 * 24 * 7, // 1 week
-    });
   }
   // -------------------------------------------------------------------------------
 
@@ -134,43 +107,40 @@ async function refreshSeaOfThievesCredentials(
 
   if (storageLocation === "client") {
     await browser.cookies.set({
-      url: "https://www.merciasquill.com",
+      url: "https://auth.merciasquill.com",
       domain: ".merciasquill.com",
-      name: "session-seaofthieves_rat_token",
+      name: "session.seaofthieves.rat.token",
       value: ratCookie.value,
       expirationDate: ratCookieExpiration,
 
       secure: true,
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax",
     });
 
     // eslint-disable-next-line no-console
     return console.log("saved rat token to client");
   }
 
-  const decodedJwt = decodeJwt(activeSession);
-
   const apiUrl = new URL(
-    `https://api.merciasquill.com/seaofthieves/tokens/${decodedJwt.sub}`
+    `https://api.merciasquill.com/seaofthieves/tokens/${sessionData.session.sub}`
   );
 
   const headers = new Headers();
-  headers.append("x-jwt-token", activeSession);
+  headers.append("x-jwt-token", sessionData.jwt);
 
   const body = new URLSearchParams();
   body.append("rat", ratCookie.value);
   body.append("expiresAt", Math.round(ratCookieExpiration * 1000) + "");
-  body.append("userAgent", userAgent);
+  body.append("userAgent", userAgent as string);
 
   const response = await fetch(apiUrl, { method: "PUT", headers, body });
 
   // Invalid session cookie
   if (response.status === 401) {
-    await storage.removeItem("local:session");
-    return await browser.cookies.remove({
-      url: "https://www.merciasquill.com",
-      name: "session-jwt_token",
+    return await browser.tabs.create({
+      url: "https://auth.merciasquill.com/logout",
+      active: false,
     });
   }
 
@@ -182,18 +152,31 @@ async function refreshSeaOfThievesCredentials(
   console.log("successfully saved rat token to server");
 }
 
-type AttemptSessionRecoveryReturn =
+type FetchSessionReturn =
   | { success: false }
-  | { success: true; session: string };
+  | {
+      success: true;
+      session: {
+        sub: string;
+        userId: string;
+        username: string;
+        displayName: string;
+        avatar: string;
+      };
+      jwt: string;
+    };
 
-export async function attemptSessionRecovery(): Promise<AttemptSessionRecoveryReturn> {
-  const cookieSession = await browser.cookies.get({
-    url: "https://extension.merciasquill.com",
-    name: "session-long_jwt_token",
+export async function fetchSession(): Promise<FetchSessionReturn> {
+  const accessTokenCookie = await browser.cookies.get({
+    url: "https://auth.merciasquill.com",
+    name: "session.access.token",
   });
 
-  if (!cookieSession) return { success: false };
+  if (!accessTokenCookie) return { success: false };
 
-  await storage.setItem("local:session", cookieSession.value);
-  return { success: true, session: cookieSession.value };
+  return {
+    success: true,
+    session: decodeJwt(accessTokenCookie.value),
+    jwt: accessTokenCookie.value,
+  };
 }
