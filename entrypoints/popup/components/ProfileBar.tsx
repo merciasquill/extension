@@ -25,16 +25,16 @@ export default function ProfileBar({ className = "" }) {
 
       if (!sessionData.success) return setSignedIn(false);
 
-      const { session } = sessionData;
+      const { payload } = sessionData;
 
-      if (session.displayName.length > 12) {
-        setDisplayName(session.displayName.substring(0, 12) + "...");
+      if (payload.displayName.length > 12) {
+        setDisplayName(payload.displayName.substring(0, 12) + "...");
       } else {
-        setDisplayName(session.displayName);
+        setDisplayName(payload.displayName);
       }
 
-      setUsername(session.username);
-      setProfilePicture(session.avatar);
+      setUsername(payload.username);
+      setProfilePicture(payload.avatar);
 
       setSignedIn(true);
     }

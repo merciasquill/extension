@@ -14,6 +14,30 @@ browser.runtime.onMessage.addListener(
       return sendResponse({ action: "user_agent_response", userAgent });
     }
 
+    if (action === "csrf_token_prompt") {
+      const scripts = Array.from(document.scripts);
+      let appProps = null;
+
+      for (const script of scripts) {
+        if (!script.textContent?.startsWith("var APP_PROPS = {")) continue;
+
+        const appPropsObjectLiteral = script.textContent.match(
+          /APP_PROPS\s*=\s*({[\s\S]*?});/
+        );
+
+        if (!appPropsObjectLiteral?.[1]) {
+          throw new Error("failed to parse APP_PROPS");
+        }
+
+        appProps = JSON.parse(appPropsObjectLiteral[1]);
+      }
+
+      return sendResponse({
+        action: "csrf_token_response",
+        csrfToken: appProps.csrf,
+      });
+    }
+
     if (action !== "show_toast") return;
 
     const type = options.type;

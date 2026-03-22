@@ -16,14 +16,12 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   const parts = hostname.split(".");
   const rootDomain = parts.slice(-2).join(".");
 
-  if (rootDomain !== "seaofthieves.com" && rootDomain !== "merciasquill.com") {
-    return;
-  }
-
   if (rootDomain === "seaofthieves.com") {
     return refreshSeaOfThievesCredentials(tabId, changeInfo, tab);
   }
 });
+
+const SEA_OF_THIEVES_COOKIE_URL = "https://www.seaofthieves.com";
 
 async function refreshSeaOfThievesCredentials(
   tabId: number,
@@ -61,6 +59,49 @@ async function refreshSeaOfThievesCredentials(
   }
   // -------------------------------------------------------------------------------
 
+  // ------------------------------- Rat Token Check -------------------------------
+  const ratTokenCookie = await browser.cookies.get({
+    url: SEA_OF_THIEVES_COOKIE_URL,
+    name: "rat",
+  });
+  // eslint-disable-next-line no-console
+  if (!ratTokenCookie) return console.log("rat token undefined");
+
+  const ratCookieExpiration = (ratTokenCookie.expirationDate ?? 0) * 1000;
+  if (Date.now() > ratCookieExpiration) {
+    // eslint-disable-next-line no-console
+    return console.log("rat token expired");
+  }
+
+  // -------------------------------------------------------------------------------
+
+  // ------------------------------- Awfs Token Check -------------------------------
+
+  const awfsCookie = await browser.cookies.get({
+    url: SEA_OF_THIEVES_COOKIE_URL,
+    name: "awfs",
+  });
+  // eslint-disable-next-line no-console
+  if (!awfsCookie) return console.log("awfs token undefined");
+
+  const awfsCookieExpiration = (awfsCookie.expirationDate ?? 0) * 1000;
+  if (Date.now() > awfsCookieExpiration) {
+    // eslint-disable-next-line no-console
+    return console.log("awfs token expired");
+  }
+
+  // -------------------------------------------------------------------------------
+
+  // ------------------------------- Csrf Token Check -------------------------------
+
+  const csrfPromptResponse = await browser.tabs.sendMessage(tabId, {
+    action: "csrf_token_prompt",
+  });
+
+  const csrfToken = csrfPromptResponse.csrfToken as string;
+
+  // -------------------------------------------------------------------------------
+
   // ------------------------------- User Agent Check -------------------------------
   let userAgent = await storage.getItem("local:user-agent");
 
@@ -74,16 +115,6 @@ async function refreshSeaOfThievesCredentials(
   }
   // -------------------------------------------------------------------------------
 
-  const ratCookie = await browser.cookies.get({
-    url: "https://www.seaofthieves.com",
-    name: "rat",
-  });
-
-  // eslint-disable-next-line no-console
-  if (!ratCookie) return console.log("rat token undefined");
-
-  const ratCookieExpiration = ratCookie.expirationDate ?? 0;
-
   const storageLocation = await storage.getItem("local:storage-location");
 
   if (storageLocation === "client") {
@@ -91,7 +122,7 @@ async function refreshSeaOfThievesCredentials(
       url: "https://auth.merciasquill.com",
       domain: ".merciasquill.com",
       name: "session.seaofthieves.rat.token",
-      value: ratCookie.value,
+      value: ratTokenCookie.value,
       expirationDate: ratCookieExpiration,
 
       secure: true,
@@ -104,16 +135,22 @@ async function refreshSeaOfThievesCredentials(
   }
 
   const apiUrl = new URL(
-    `https://api.merciasquill.com/seaofthieves/tokens/${sessionData.session.sub}`
+    `https://api.merciasquill.com/seaofthieves/tokens/${sessionData.payload.sub}`
   );
 
   const headers = new Headers();
-  headers.append("x-access-token", sessionData.jwt);
+  headers.append("x-access-token", sessionData.token);
 
   const body = new URLSearchParams();
-  body.append("rat", ratCookie.value);
-  body.append("expiresAt", Math.round(ratCookieExpiration * 1000) + "");
-  body.append("userAgent", userAgent as string);
+  body.append("rat_token_value", ratTokenCookie.value);
+  body.append("rat_expires_at", Math.round(ratCookieExpiration) + "");
+
+  body.append("awfs_token_value", awfsCookie.value);
+  body.append("awfs_expires_at", Math.round(awfsCookieExpiration) + "");
+
+  body.append("csrf_token_value", csrfToken as string);
+
+  body.append("user_agent", userAgent as string);
 
   const response = await fetch(apiUrl, { method: "PUT", headers, body });
 
@@ -126,25 +163,26 @@ async function refreshSeaOfThievesCredentials(
   }
 
   // eslint-disable-next-line no-console
-  if (!response.ok) return console.log("failed to save rat token");
+  if (!response.ok) return console.log("failed to save rat token to server");
 
   await storage.setItem("local:last-update", Date.now());
+
   // eslint-disable-next-line no-console
-  console.log("successfully saved rat token to server");
+  console.log("saved rat token to server");
 }
 
 type FetchSessionReturn =
   | { success: false }
   | {
       success: true;
-      session: {
+      payload: {
         sub: string;
         userId: string;
         username: string;
         displayName: string;
         avatar: string;
       };
-      jwt: string;
+      token: string;
     };
 
 export async function fetchSession(): Promise<FetchSessionReturn> {
@@ -157,7 +195,7 @@ export async function fetchSession(): Promise<FetchSessionReturn> {
 
   return {
     success: true,
-    session: decodeJwt(accessTokenCookie.value),
-    jwt: accessTokenCookie.value,
+    payload: decodeJwt(accessTokenCookie.value),
+    token: accessTokenCookie.value,
   };
 }
