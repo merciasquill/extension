@@ -1,72 +1,64 @@
+import eslint from "@eslint/js";
+import * as tsParser from "@typescript-eslint/parser";
 import { defineConfig, globalIgnores } from "eslint/config";
-import { fixupConfigRules, fixupPluginRules } from "@eslint/compat";
-import react from "eslint-plugin-react";
+import eslintConfigPrettier from "eslint-config-prettier/flat";
+import importPlugin from "eslint-plugin-import";
+import jsxA11y from "eslint-plugin-jsx-a11y";
+import reactPlugin from "eslint-plugin-react";
+import reactHooks from "eslint-plugin-react-hooks";
 import unusedImports from "eslint-plugin-unused-imports";
-import _import from "eslint-plugin-import";
-import typescriptEslint from "@typescript-eslint/eslint-plugin";
-import jsxA11Y from "eslint-plugin-jsx-a11y";
-import prettier from "eslint-plugin-prettier";
 import globals from "globals";
-import tsParser from "@typescript-eslint/parser";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
-import { FlatCompat } from "@eslint/eslintrc";
+import { configs as tsConfigs } from "typescript-eslint";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
+const eslintConfig = defineConfig([
+  eslint.configs.recommended,
+  tsConfigs.recommended,
 
-export default defineConfig([
+  importPlugin.flatConfigs.recommended,
+  importPlugin.flatConfigs.typescript,
+
+  jsxA11y.flatConfigs.recommended,
+
+  reactPlugin.configs.flat.recommended,
+  reactPlugin.configs.flat["jsx-runtime"],
+  reactHooks.configs.flat.recommended,
+
+  eslintConfigPrettier,
+
   globalIgnores([
-    ".now/*",
-    "**/*.css",
-    "**/.changeset",
-    "**/dist",
-    "esm/*",
-    "public/*",
-    "tests/*",
-    "scripts/*",
-    "**/*.config.js",
     "**/.DS_Store",
-    "**/node_modules",
-    "**/coverage",
-    "**/.wxt",
-    "**/build",
-    "!**/.commitlintrc.cjs",
-    "!**/.lintstagedrc.cjs",
-    "!**/jest.config.js",
-    "!**/plopfile.js",
-    "!**/react-shim.js",
-    "!**/tsup.config.ts",
+    ".ignore/**",
+    ".next/**",
+    ".output/**",
+    ".wxt/**",
+    "build/**",
+    "dist/**",
+    "next-env.d.ts",
+    "node_modules/**",
+    "out/**",
+    "public/**",
   ]),
+
   {
-    extends: fixupConfigRules(
-      compat.extends(
-        "plugin:react/recommended",
-        "plugin:prettier/recommended",
-        "plugin:react-hooks/recommended",
-        "plugin:jsx-a11y/recommended"
-      )
-    ),
-
     plugins: {
-      react: fixupPluginRules(react),
       "unused-imports": unusedImports,
-      import: fixupPluginRules(_import),
-      "@typescript-eslint": typescriptEslint,
-      "jsx-a11y": fixupPluginRules(jsxA11Y),
-      prettier: fixupPluginRules(prettier),
     },
+  },
 
+  {
+    settings: {
+      "import/resolver": { typescript: true, node: true },
+      react: { version: "detect" },
+    },
+  },
+
+  {
     languageOptions: {
       globals: {
+        ...Object.fromEntries(
+          Object.entries(globals.browser).map(([key]) => [key, "off"])
+        ),
         ...globals.webextensions,
-        ...globals.browser,
         ...globals.node,
       },
 
@@ -74,40 +66,18 @@ export default defineConfig([
       ecmaVersion: 12,
       sourceType: "module",
 
-      parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
-      },
+      parserOptions: { ecmaFeatures: { jsx: true } },
     },
+  },
 
-    settings: {
-      react: {
-        version: "detect",
-      },
-    },
-
-    files: ["**/*.ts", "**/*.tsx"],
-
+  {
     rules: {
       "no-console": "warn",
-      "react/prop-types": "off",
-      "react/jsx-uses-react": "off",
-      "react/react-in-jsx-scope": "off",
-      "react-hooks/exhaustive-deps": "off",
-      "jsx-a11y/click-events-have-key-events": "warn",
-      "jsx-a11y/interactive-supports-focus": "warn",
+
       "no-unused-vars": "off",
       "unused-imports/no-unused-vars": "off",
-      "unused-imports/no-unused-imports": "warn",
 
-      "prettier/prettier": [
-        "warn",
-        {
-          endOfLine: "auto",
-        },
-      ],
-
+      "@typescript-eslint/consistent-type-imports": "warn",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {
@@ -117,10 +87,28 @@ export default defineConfig([
         },
       ],
 
+      "import/no-duplicates": "warn",
+      "import/no-dynamic-require": "warn",
       "import/order": [
         "warn",
         {
           alphabetize: { order: "asc", caseInsensitive: true },
+
+          pathGroups: [
+            { pattern: "@/types/**", group: "type" },
+
+            { pattern: "@models/**", group: "internal", position: "after" },
+            { pattern: "@redis/**", group: "internal", position: "after" },
+            { pattern: "@utils/**", group: "internal", position: "after" },
+
+            { pattern: "@api/**", group: "internal", position: "after" },
+            { pattern: "@auth/**", group: "internal", position: "after" },
+            { pattern: "@www/**", group: "internal", position: "after" },
+
+            { pattern: "@svg/**", group: "internal", position: "after" },
+
+            { pattern: "@/**", group: "internal", position: "after" },
+          ],
 
           groups: [
             "type",
@@ -128,25 +116,24 @@ export default defineConfig([
             "object",
             "external",
             "internal",
-            "parent",
-            "sibling",
+            ["sibling", "parent"],
             "index",
-          ],
-
-          pathGroups: [
-            {
-              pattern: "~/**",
-              group: "external",
-              position: "after",
-            },
           ],
 
           "newlines-between": "always",
         },
       ],
 
-      "react/self-closing-comp": "warn",
+      "unused-imports/no-unused-imports": "warn",
 
+      "jsx-a11y/click-events-have-key-events": "warn",
+      "jsx-a11y/interactive-supports-focus": "warn",
+
+      "react/prop-types": "off",
+      "react/jsx-uses-react": "off",
+      "react/react-in-jsx-scope": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "react/self-closing-comp": "warn",
       "react/jsx-sort-props": [
         "warn",
         {
@@ -159,3 +146,5 @@ export default defineConfig([
     },
   },
 ]);
+
+export default eslintConfig;
